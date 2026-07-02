@@ -1,0 +1,43 @@
+name: Claude Code Review
+
+# Automatically reviews every pull request. Claude leaves review feedback as a
+# comment on the PR — code quality, bugs, test coverage, and security concerns.
+on:
+  pull_request:
+    types: [opened, synchronize]
+    # Optionally scope to certain paths:
+    # paths:
+    #   - "src/**/*.js"
+    #   - "src/**/*.jsx"
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this pull request for the expense-tracker app and post your
+            feedback using the `gh pr comment` command. Focus on:
+            - Correctness and potential bugs
+            - Whether the change actually resolves the linked issue
+            - React best practices (keys, state, effects)
+            - Test coverage for the change
+            - Security or data-handling concerns
+
+            Be concise and constructive. Use inline code suggestions where helpful.
+            If the PR looks good, say so briefly.
+          claude_args: |
+            --allowedTools "Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(npm install),Bash(npm run build),Bash(npm run lint),Bash(npm test)"
